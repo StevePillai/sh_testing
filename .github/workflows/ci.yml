@@ -1,0 +1,37 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:        # adds a manual "Run workflow" button
+
+permissions:
+  contents: read            # the robot may only READ the repo
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Get the code
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Run the tests
+        run: sh ./test.sh
+
+      - name: Package the app
+        run: |
+          mkdir -p dist
+          tar -czf "dist/myapp-${GITHUB_SHA}.tar.gz" hello.sh
+          cd dist && sha256sum *.tar.gz > SHA256SUMS
+
+      - name: Publish the artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: myapp
+          path: dist/
+          retention-days: 7
